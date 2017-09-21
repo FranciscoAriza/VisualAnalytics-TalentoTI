@@ -11,23 +11,26 @@ function createChart (svg, data) {
 
   //var colors = ["#ccebc5", "#a8ddb5", "#7bccc4", "#4eb3d3", "#2b8cbe", "#0868ac", "#084081"]
 
-  svg = d3.select(svg)
-  var margin = {top: 20, right: 90, bottom: 30, left: 10}
-  var width = 960 - margin.left - margin.right
-  var height = 500 - margin.top - margin.bottom
-  var g = svg.append('g').attr('transform', 'translate(0)')        
-        .attr("width", width)
-        .attr("height", height)
+//@fariza modifique la definición del svg para que lo tome como aributos del svg y no como variables independientes.
+  svg = d3.select(svg),
+    margin = {top: 20, right: 90, bottom: 30, left: 130},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append('g').attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+      //  .attr("width", width)
+        //.attr("height", height)
 
   var y0 = d3.scaleBand()
-    .rangeRound([460,460-height])
+    //.rangeRound([0,460-height])
+    .rangeRound([0,height])
     .paddingInner(0.1)
 
   var y1 = d3.scaleBand()
     .padding(0.30)
 
   var x = d3.scaleLinear()
-    .rangeRound([960,960 - width])
+    .rangeRound([0,width])
+    //.rangeRound([960,960 - width])
 
   var z = d3.scaleOrdinal(d3.schemeCategory20)
 
@@ -45,13 +48,14 @@ function createChart (svg, data) {
     })
 
   y0.domain(nameKeys)
+  //y1.domain(valueKeys).rangeRound([y0.bandwidth(),0])
   y1.domain(valueKeys).rangeRound([y0.bandwidth(),0])
 
   var barContainer = g.append('g')
 
   var yAxis = g.append('g')
       .attr('class', 'axis')
-      .attr('transform', 'translate(' + (margin.right+margin.left) + ',-10)')
+      .attr('transform', 'translate(0,0)')//@fariza se centra el eje y
       .call(d3.axisLeft(y0))
       //.attr("transform", "rotate(90)")
 
@@ -63,13 +67,14 @@ function createChart (svg, data) {
   xAxis
     .append('text')
       .attr('y', 2)
-      .attr('x', x(x.ticks().pop()))
+      .attr('x', x(x.ticks().pop())+0.5)
       .attr('dx', '0.32em')
       .attr('font-weight', 'bold')
       .attr('text-anchor', 'start')
+      .text('Beneficiados')
       //.attr('transform', 'translate(40' + width + ')')
       //.attr('transform', 'translate(' + margin.right + ',0)')
-      .text('Beneficiados')
+
 
 
 // leyenda de los niveles de programa
@@ -102,6 +107,7 @@ function createChart (svg, data) {
       .attr('dy', '0.32em')
       .text(function (d) { return d; })
 
+
   var stack = d3.stack()
       .keys(valueKeys)
 
@@ -129,6 +135,8 @@ function createChart (svg, data) {
       var bars = barsWithData
       .enter()
       .append('g')
+      //@fariza debes revisar esta parte porque está dejando datos en categorías a las que no pertenecen los datos ej:
+      //para el año 2012-2 EXT existen registros para TOLIMA y SANTANDER sin embargo se visualizan en CESAR y CAUCA.
       .attr('transform', function (d) { return 'translate(0,' + y0(d.name) + ')' })
       //.attr("transform", "rotate(180)")
       .merge(barsWithData)
@@ -149,11 +157,13 @@ function createChart (svg, data) {
       .attr('x', width)
       .merge(bars)
       .transition()
-      .attr('height', y1.bandwidth())
       .attr('y', function (d) { return y1(d.key) })
-      .attr('x', function (d) { return x(d.value); })
-      .attr('x', (margin.right+margin.left) )
-      .attr('width', function (d) { return width - (x(d.value)+margin.right); })
+      .attr('x', function (d) { return x([0]); }) //@fariza se corrige la coordenada x
+    //  .attr('x', function (d) { return x(d.value); })
+      //.attr('x', (margin.right+margin.lef) )
+      //.attr('width', function (d) { return width - (x(d.value)+margin.right); })
+      .attr('width', function (d) { return (x(d.value)); })  //@fariza se corrige el valor de width
+      .attr('height', y1.bandwidth())
     }
 
   }
@@ -196,7 +206,7 @@ d3.json('./beneficiarios.json', function(error, data){
     })
   })
 
-  
+
   // render initial chart
   chart.updateChart(data[Object.keys(data)[0]])
 
